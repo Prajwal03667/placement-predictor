@@ -1,1 +1,7 @@
 project_id = "cfvloshvkpugoqujaddg"
+
+[functions.predict-placement]
+verify_jwt = false
+
+[functions.retrain-model]
+verify_jwt = false

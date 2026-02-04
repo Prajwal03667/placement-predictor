@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { SkillsChart } from "@/components/dashboard/SkillsChart";
+import { PredictionTrendChart } from "@/components/dashboard/PredictionTrendChart";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -38,13 +40,14 @@ interface Prediction {
 export default function Dashboard() {
   const { user } = useAuth();
   const [latestPrediction, setLatestPrediction] = useState<Prediction | null>(null);
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchLatestPrediction();
+    fetchPredictions();
   }, [user]);
 
-  const fetchLatestPrediction = async () => {
+  const fetchPredictions = async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -52,11 +55,11 @@ export default function Dashboard() {
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(10);
 
-    if (!error && data) {
-      setLatestPrediction(data);
+    if (!error && data && data.length > 0) {
+      setLatestPrediction(data[0]);
+      setAllPredictions(data);
     }
     setLoading(false);
   };
@@ -204,6 +207,19 @@ export default function Dashboard() {
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              <SkillsChart
+                cgpa={latestPrediction.cgpa}
+                programmingSkill={latestPrediction.programming_skill}
+                communicationSkill={latestPrediction.communication_skill}
+                numProjects={latestPrediction.num_projects}
+                hasInternship={latestPrediction.has_internship}
+                hasCertifications={latestPrediction.has_certifications}
+              />
+              <PredictionTrendChart predictions={allPredictions} />
             </div>
 
             {/* Recommendations */}

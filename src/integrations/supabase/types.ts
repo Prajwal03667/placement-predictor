@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      model_weights: {
+        Row: {
+          accuracy: number | null
+          bias: number
+          certifications_weight: number
+          cgpa_weight: number
+          communication_weight: number
+          id: string
+          internship_weight: number
+          last_trained_at: string | null
+          programming_weight: number
+          projects_weight: number
+          training_samples: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          bias?: number
+          certifications_weight?: number
+          cgpa_weight?: number
+          communication_weight?: number
+          id?: string
+          internship_weight?: number
+          last_trained_at?: string | null
+          programming_weight?: number
+          projects_weight?: number
+          training_samples?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          bias?: number
+          certifications_weight?: number
+          cgpa_weight?: number
+          communication_weight?: number
+          id?: string
+          internship_weight?: number
+          last_trained_at?: string | null
+          programming_weight?: number
+          projects_weight?: number
+          training_samples?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       predictions: {
         Row: {
           cgpa: number
@@ -122,6 +170,72 @@ export type Database = {
           programming_skill?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      training_batches: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          record_count: number
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          record_count?: number
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          record_count?: number
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
+      training_data: {
+        Row: {
+          batch_id: string
+          cgpa: number
+          communication_skill: number
+          created_at: string
+          has_certifications: boolean
+          has_internship: boolean
+          id: string
+          num_projects: number
+          programming_skill: number
+          uploaded_by: string
+          was_placed: boolean
+        }
+        Insert: {
+          batch_id: string
+          cgpa: number
+          communication_skill: number
+          created_at?: string
+          has_certifications?: boolean
+          has_internship?: boolean
+          id?: string
+          num_projects?: number
+          programming_skill: number
+          uploaded_by: string
+          was_placed: boolean
+        }
+        Update: {
+          batch_id?: string
+          cgpa?: number
+          communication_skill?: number
+          created_at?: string
+          has_certifications?: boolean
+          has_internship?: boolean
+          id?: string
+          num_projects?: number
+          programming_skill?: number
+          uploaded_by?: string
+          was_placed?: boolean
         }
         Relationships: []
       }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { ModelTraining } from "@/components/admin/ModelTraining";
 import { 
   Shield, 
   Users, 
@@ -20,7 +22,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  Brain
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -165,7 +168,7 @@ export default function Admin() {
             <h1 className="text-3xl font-display font-bold">Admin Panel</h1>
           </div>
           <p className="text-muted-foreground">
-            View all student predictions and analytics.
+            Manage predictions, students, and the ML model.
           </p>
         </div>
 
@@ -191,118 +194,139 @@ export default function Admin() {
           })}
         </div>
 
-        {/* Predictions Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle className="text-xl font-display">All Predictions</CardTitle>
-                <CardDescription>Browse and search student predictions</CardDescription>
-              </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>CGPA</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Skills</TableHead>
-                    <TableHead>Probability</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPredictions.map((prediction) => (
-                    <TableRow key={prediction.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">
-                            {prediction.profiles?.full_name || "Unknown"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {prediction.profiles?.email}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{prediction.cgpa}</TableCell>
-                      <TableCell>{prediction.num_projects}</TableCell>
-                      <TableCell>
-                        <div className="text-xs space-y-1">
-                          <p>Prog: {prediction.programming_skill}/10</p>
-                          <p>Comm: {prediction.communication_skill}/10</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold">{prediction.probability}%</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={prediction.prediction_result === "Placed" ? "default" : "secondary"}
-                          className={prediction.prediction_result === "Placed" 
-                            ? "bg-success/10 text-success border-success/20" 
-                            : "bg-destructive/10 text-destructive border-destructive/20"
-                          }
-                        >
-                          {prediction.prediction_result}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {format(new Date(prediction.created_at), "MMM d, yyyy")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredPredictions.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No predictions found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="predictions" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="predictions" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Predictions
+            </TabsTrigger>
+            <TabsTrigger value="model" className="gap-2">
+              <Brain className="h-4 w-4" />
+              ML Model
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+          {/* Predictions Tab */}
+          <TabsContent value="predictions">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl font-display">All Predictions</CardTitle>
+                    <CardDescription>Browse and search student predictions</CardDescription>
+                  </div>
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>CGPA</TableHead>
+                        <TableHead>Projects</TableHead>
+                        <TableHead>Skills</TableHead>
+                        <TableHead>Probability</TableHead>
+                        <TableHead>Result</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPredictions.map((prediction) => (
+                        <TableRow key={prediction.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">
+                                {prediction.profiles?.full_name || "Unknown"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {prediction.profiles?.email}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{prediction.cgpa}</TableCell>
+                          <TableCell>{prediction.num_projects}</TableCell>
+                          <TableCell>
+                            <div className="text-xs space-y-1">
+                              <p>Prog: {prediction.programming_skill}/10</p>
+                              <p>Comm: {prediction.communication_skill}/10</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-semibold">{prediction.probability}%</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={prediction.prediction_result === "Placed" ? "default" : "secondary"}
+                              className={prediction.prediction_result === "Placed" 
+                                ? "bg-success/10 text-success border-success/20" 
+                                : "bg-destructive/10 text-destructive border-destructive/20"
+                              }
+                            >
+                              {prediction.prediction_result}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {format(new Date(prediction.created_at), "MMM d, yyyy")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredPredictions.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            No predictions found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ML Model Tab */}
+          <TabsContent value="model">
+            <ModelTraining />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

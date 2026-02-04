@@ -1,4 +1,5 @@
 import { Hono } from "https://deno.land/x/hono@v3.12.11/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const app = new Hono();
 
@@ -8,16 +9,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simulated logistic regression model weights (trained on sample placement data)
-// These weights represent the importance of each feature
-const modelWeights = {
-  cgpa: 0.45,           // CGPA is very important
-  num_projects: 0.15,   // Projects matter
-  has_internship: 0.20, // Internship experience is valuable
-  programming_skill: 0.25, // Programming skills
-  communication_skill: 0.15, // Soft skills
-  has_certifications: 0.10, // Certifications add value
-  bias: -2.5,           // Base threshold
+// Default model weights (used as fallback)
+const defaultWeights = {
+  cgpa: 0.45,
+  projects: 0.15,
+  internship: 0.20,
+  programming: 0.25,
+  communication: 0.15,
+  certifications: 0.10,
+  bias: -2.5,
 };
 
 // Sigmoid function for logistic regression
@@ -121,24 +121,27 @@ function generateRecommendations(input: {
   return recommendations.slice(0, 5); // Return top 5 recommendations
 }
 
-// Predict placement probability
-function predictPlacement(input: {
-  cgpa: number;
-  num_projects: number;
-  has_internship: boolean;
-  programming_skill: number;
-  communication_skill: number;
-  has_certifications: boolean;
-}) {
+// Predict placement probability using weights
+function predictPlacement(
+  input: {
+    cgpa: number;
+    num_projects: number;
+    has_internship: boolean;
+    programming_skill: number;
+    communication_skill: number;
+    has_certifications: boolean;
+  },
+  weights: typeof defaultWeights
+) {
   // Calculate weighted sum
   const weightedSum =
-    modelWeights.bias +
-    modelWeights.cgpa * normalizeCgpa(input.cgpa) * 10 +
-    modelWeights.num_projects * normalizeProjects(input.num_projects) * 5 +
-    modelWeights.has_internship * (input.has_internship ? 2 : 0) +
-    modelWeights.programming_skill * normalizeSkill(input.programming_skill) * 4 +
-    modelWeights.communication_skill * normalizeSkill(input.communication_skill) * 2 +
-    modelWeights.has_certifications * (input.has_certifications ? 1 : 0);
+    weights.bias +
+    weights.cgpa * normalizeCgpa(input.cgpa) * 10 +
+    weights.projects * normalizeProjects(input.num_projects) * 5 +
+    weights.internship * (input.has_internship ? 2 : 0) +
+    weights.programming * normalizeSkill(input.programming_skill) * 4 +
+    weights.communication * normalizeSkill(input.communication_skill) * 2 +
+    weights.certifications * (input.has_certifications ? 1 : 0);
 
   // Apply sigmoid to get probability
   const probability = sigmoid(weightedSum);
@@ -174,15 +177,47 @@ app.post("/", async (c) => {
       return c.json({ error: "Missing required fields" }, 400, corsHeaders);
     }
 
+    // Fetch trained model weights from database
+    let weights = { ...defaultWeights };
+    
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const { data: modelData } = await supabase
+        .from("model_weights")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (modelData) {
+        weights = {
+          cgpa: Number(modelData.cgpa_weight),
+          projects: Number(modelData.projects_weight),
+          internship: Number(modelData.internship_weight),
+          programming: Number(modelData.programming_weight),
+          communication: Number(modelData.communication_weight),
+          certifications: Number(modelData.certifications_weight),
+          bias: Number(modelData.bias),
+        };
+      }
+    } catch (e) {
+      console.log("Using default weights:", e);
+    }
+
     // Run prediction
-    const result = predictPlacement({
-      cgpa: Number(cgpa),
-      num_projects: Number(num_projects),
-      has_internship: Boolean(has_internship),
-      programming_skill: Number(programming_skill),
-      communication_skill: Number(communication_skill),
-      has_certifications: Boolean(has_certifications),
-    });
+    const result = predictPlacement(
+      {
+        cgpa: Number(cgpa),
+        num_projects: Number(num_projects),
+        has_internship: Boolean(has_internship),
+        programming_skill: Number(programming_skill),
+        communication_skill: Number(communication_skill),
+        has_certifications: Boolean(has_certifications),
+      },
+      weights
+    );
 
     return c.json(result, 200, corsHeaders);
   } catch (error) {
